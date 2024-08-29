@@ -329,3 +329,105 @@ class TrainTable:
                 )
 
         return list(set(trains_list))
+
+
+class CModeTrainTable(TrainTable):
+    def __init__(self):
+        super().__init__()
+
+    def echo(self):
+        """
+        对外调用的方法，用来打印查询结果
+        """
+        if not settings.cmode:
+            return super().echo()
+        tb = pt.PrettyTable()
+        tb.field_names = ["编号", "车次", "发车", "出发站", "到达站", "到达", "余票", "历时", "换乘间隔"]
+        self.cleanup()
+        for idx, change_train in enumerate(self.trains_list):
+            train1, train2, interval = change_train
+            tb.add_row([idx, *train1.row, ""])
+            tb.add_row(["" ,*train2.row, interval])
+        print(tb)
+
+    def cleanup(self):
+        """处理trains_list，排序和删除无效数据"""
+        if not settings.cmode:
+            return super().cleanup()
+        t_list = []
+        if settings.remaining:
+            for train1, train2, interval in self.trains_list:
+                # print(train.no, train.remaining, train.has_remaining)
+                if train1.has_remaining and train2.has_remaining:
+                    t_list.append([train1, train2, interval])
+        else:
+            t_list = self.trains_list
+        # 过滤发车时间
+        if settings.ft:
+            t_list = [t for t in t_list if t[0].check_time(t[0].start_time, settings.ft)]
+        # 过滤到达时间
+        if settings.tt:
+            t_list = [t for t in t_list if t[1].check_time(t[1].end_time, settings.tt)]
+        # 过滤换乘时间
+        if settings.ct:
+            t_list = [t for t in t_list if t[1].check_time(t[1].start_time, settings.ct)]
+        # 同城站点过滤
+        if not settings.all_stations_in_city:
+            t_list = [t for t in t_list if t[0]._fs == settings.fs]
+            t_list = [t for t in t_list if t[0]._ts == settings.cs]
+            t_list = [t for t in t_list if t[1]._fs == settings.cs]
+            t_list = [t for t in t_list if t[1]._ts == settings.ts]
+        self.trains_list = sorted(t_list)        
+
+    def update(self):
+        """
+        对外调用的方法，查询12306列车信息，把结果更新到trains_list中
+        """
+        if settings.cmode:
+            self.trains_list = self._query_trains_cmode(
+                settings.fs_code,
+                settings.ts_code,
+                settings.cs_code,
+                settings.date,
+                settings.trains_no_list,
+            )
+        else:
+            return super().update()
+
+    def _query_trains_cmode(self, fs_code, ts_code, cs_code, date, trains_no_list) -> list:
+        """
+            中转查询
+            仅被内部调用，调用前处理好参数
+        :param fs_code: 出发地编码
+        :param ts_code: 目的地编码
+        :param cs_code: 中转站编码
+        :param date: 日期
+        :param trains_no_list: 限制车次
+        :return: Train对象列表
+        """
+        def convert_digit_to_hm(sec, flag=False):
+            sec = 3600 * sec
+            m, s = divmod(sec, 60)
+            h, m = divmod(m, 60)
+            if flag:
+                h += 24
+            return "%02d:%02d" % (h, m)
+
+        trains_list1 = self._query_trains(fs_code, cs_code, date, trains_no_list)
+        trains_list2 = self._query_trains(cs_code, ts_code, date, trains_no_list)
+        trains_list = []
+        change_interval = settings.ci
+        for train1 in trains_list1:
+            for train2 in trains_list2:
+                time1 = time.strptime(train1.end_time, "%H:%M")
+                time2 = time.strptime(train2.start_time, "%H:%M")
+                time1 = time1[:0] + (2024,) + time1[1:]
+                time2 = time2[:0] + (2024,) + time2[1:]
+                diff = (time.mktime(time2) - time.mktime(time1)) / 3600
+                if diff > 0 and diff < change_interval:
+                    # 当天换乘
+                    trains_list.append((train1, train2, convert_digit_to_hm(diff)))
+                elif diff < 0 and (diff < -24 + change_interval):
+                    # 跨天换乘
+                    trains_list.append((train1, train2, convert_digit_to_hm(diff, True)))
+        return trains_list

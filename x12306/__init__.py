@@ -9,7 +9,7 @@
 import click
 
 from .settings import settings
-from .train import TrainTable
+from .train import TrainTable, CModeTrainTable
 
 
 @click.command()
@@ -18,6 +18,9 @@ from .train import TrainTable
 @click.option("-ft", "--from-time", help="出发时间范围，如：06:00-12:00")
 @click.option("-t", "--to-station", prompt="请输入目的地", help="目的地")
 @click.option("-tt", "--to-time", help="到达时间范围，如：18:00-24:00")
+@click.option("-c", "--change-station", help="中转站")
+@click.option("-ct", "--change-time", help="中转时间范围")
+@click.option("-ci", "--change-interval", help="中转时间间隔（h）")
 @click.option("-asic", "--all-stations-in-city", default=True, help="同城模式")
 @click.option("-d", "--date", prompt="请输入日期（YYYY-MM-DD）", help="日期")
 @click.option("-s", "--seats", help="限制座位，如：一等座 二等座 无座")
@@ -36,6 +39,9 @@ def main(
     from_time,
     to_station,
     to_time,
+    change_station,
+    change_time,
+    change_interval,
     all_stations_in_city,
     date,
     seats,
@@ -60,6 +66,9 @@ def main(
         ft=from_time,
         ts=to_station,
         tt=to_time,
+        cs=change_station,
+        ct=change_time,
+        ci=change_interval,
         all_stations_in_city=all_stations_in_city,
         date=date,
         seats=seats,
@@ -78,6 +87,7 @@ def main(
     print("\n-----------------------")
     print(settings)
     print("查询中...请稍等... :)\n")
-    tt = TrainTable()
+    klass = CModeTrainTable if settings.cmode else TrainTable
+    tt = klass()
     tt.update()
     tt.echo()

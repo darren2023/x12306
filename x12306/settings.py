@@ -81,6 +81,12 @@ class Settings(metaclass=Singleton):
         self.ts = ""
         # 到达时间 -tt --to-time
         self.tt = ""
+        # 中转站 -c --change-station
+        self.cs = ""
+        # 中转时间 -ct --change-time
+        self.ct = ""
+        # 中转时间间隔 -ci --change-interval
+        self.ci = 3
         # 同城模式 -asic --all-stations-in-city
         self.all_stations_in_city = True
         # 日期 -d --date （格式：2019-01-01）
@@ -147,6 +153,15 @@ class Settings(metaclass=Singleton):
     @property
     def ts_code(self):
         return self.stations_dict.get(self.ts, "")
+    
+    @property
+    def cs_code(self):
+        return self.stations_dict.get(self.cs, "")
+    
+    @property
+    def cmode(self):
+        # 中转模式
+        return self.cs != ""
 
     @property
     def trains_no_list(self):
