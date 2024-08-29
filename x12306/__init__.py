@@ -18,6 +18,7 @@ from .train import TrainTable
 @click.option("-ft", "--from-time", help="出发时间范围，如：06:00-12:00")
 @click.option("-t", "--to-station", prompt="请输入目的地", help="目的地")
 @click.option("-tt", "--to-time", help="到达时间范围，如：18:00-24:00")
+@click.option("-asic", "--all-stations-in-city", default=True, help="同城模式")
 @click.option("-d", "--date", prompt="请输入日期（YYYY-MM-DD）", help="日期")
 @click.option("-s", "--seats", help="限制座位，如：一等座 二等座 无座")
 @click.option("-n", "--trains-no", help="限制车次，如：G1 G2 G3")
@@ -35,6 +36,7 @@ def main(
     from_time,
     to_station,
     to_time,
+    all_stations_in_city,
     date,
     seats,
     trains_no,
@@ -58,6 +60,7 @@ def main(
         ft=from_time,
         ts=to_station,
         tt=to_time,
+        all_stations_in_city=all_stations_in_city,
         date=date,
         seats=seats,
         trains_no=trains_no,

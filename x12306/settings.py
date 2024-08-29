@@ -81,6 +81,8 @@ class Settings(metaclass=Singleton):
         self.ts = ""
         # 到达时间 -tt --to-time
         self.tt = ""
+        # 同城模式 -asic --all-stations-in-city
+        self.all_stations_in_city = True
         # 日期 -d --date （格式：2019-01-01）
         self.date = ""
         # 车次代码 -n --trains-no （格式：G1 G2 G3）

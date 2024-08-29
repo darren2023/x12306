@@ -180,6 +180,10 @@ class TrainTable:
         # 过滤到达时间
         if settings.tt:
             t_list = [t for t in t_list if t.check_time(t.end_time, settings.tt)]
+        # 同城站点过滤
+        if not settings.all_stations_in_city:
+            t_list = [t for t in t_list if t._fs == settings.fs]
+            t_list = [t for t in t_list if t._ts == settings.ts]
         self.trains_list = sorted(t_list)
 
     def update(self):
