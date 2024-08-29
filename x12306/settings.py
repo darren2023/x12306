@@ -147,6 +147,18 @@ class Settings(metaclass=Singleton):
     @property
     def ts_code(self):
         return self.stations_dict.get(self.ts, "")
+    
+    def separate_stations(self, stations: str) -> list:
+        separators = "[,; ，；]"  # comma, semicolon, and space
+        return re.split(separators, stations)
+
+    def station_code_list(self, name: str) -> list:
+        # 车站编码列表
+        return [self.stations_dict.get(s, "") for s in self.station_list(name)]
+    
+    def station_list(self, name: str) -> list:
+        # 车站列表
+        return self.separate_stations(getattr(self, name))
 
     @property
     def trains_no_list(self):
