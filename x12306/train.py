@@ -182,8 +182,8 @@ class TrainTable:
             t_list = [t for t in t_list if t.check_time(t.end_time, settings.tt)]
         # 同城站点过滤
         if not settings.all_stations_in_city:
-            t_list = [t for t in t_list if t._fs == settings.fs]
-            t_list = [t for t in t_list if t._ts == settings.ts]
+            t_list = [t for t in t_list if t._fs in settings.station_list("fs")]
+            t_list = [t for t in t_list if t._ts in settings.station_list("ts")]
         self.trains_list = sorted(t_list)
 
     def update(self):
@@ -191,16 +191,16 @@ class TrainTable:
         对外调用的方法，查询12306列车信息，把结果更新到trains_list中
         """
         if settings.zmode:
-            self.trains_list = self._query_trains_zmode(
-                settings.fs_code,
-                settings.ts_code,
+            self.trains_list = self._query_trains_multi_stations_zmode(
+                settings.station_code_list("fs"),
+                settings.station_code_list("ts"),
                 settings.date,
                 settings.trains_no_list,
             )
         else:
-            self.trains_list = self._query_trains(
-                settings.fs_code,
-                settings.ts_code,
+            self.trains_list = self._query_trains_multi_stations(
+                settings.station_code_list("fs"),
+                settings.station_code_list("ts"),
                 settings.date,
                 settings.trains_no_list,
             )
@@ -329,6 +329,26 @@ class TrainTable:
                 )
 
         return list(set(trains_list))
+    
+    def _query_trains_multi_stations(self, fs_code, ts_code, date, trains_no_list) -> list:
+        """
+            查询多个站点之间的车次信息, 对query_trains的扩展
+        """
+        trains_list = []
+        for fc in fs_code:
+            for tc in ts_code:
+                trains_list += self._query_trains(fc, tc, date, trains_no_list)
+        return trains_list
+    
+    def _query_trains_multi_stations_zmode(self, fs_code, ts_code, date, trains_no_list) -> list:
+        """
+            查询多个站点之间的车次信息, 对query_trains_zmode的扩展
+        """
+        trains_list = []
+        for fc in fs_code:
+            for tc in ts_code:
+                trains_list += self._query_trains_zmode(fc, tc, date, trains_no_list)
+        return trains_list
 
 
 class CModeTrainTable(TrainTable):
