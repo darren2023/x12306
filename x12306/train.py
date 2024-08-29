@@ -121,6 +121,21 @@ class Train:
             remaining_seats,
             self.duration,
         ]
+    
+    def check_time(self, ttime:str, time_range:str) -> bool:
+        """检查发车时间是否符合要求，放在此类中用于对各种模式下的复用
+        :param ttime: 发车时间或到达时间, 格式为"HH:MM"
+        :param time_range: 时间范围字符串，如"12:00-18:00"，分隔符可以是逗号、分号、空格或短横线
+        """
+        separators = "[,; -]"  # comma, semicolon, space or hyphen
+        fts = re.split(separators, time_range)
+        ft_start = fts[0] if len(fts) > 0 else "00:00"
+        ft_end = fts[1] if len(fts) > 1 else "24:00"
+        if ft_start > ft_end:
+            # 跨天
+            return ttime >= ft_start or ttime <= ft_end
+        else:
+            return ft_start <= ttime <= ft_end
 
 
 class TrainTable:
@@ -159,6 +174,12 @@ class TrainTable:
                     t_list.append(train)
         else:
             t_list = self.trains_list
+        # 过滤发车时间
+        if settings.ft:
+            t_list = [t for t in t_list if t.check_time(t.start_time, settings.ft)]
+        # 过滤到达时间
+        if settings.tt:
+            t_list = [t for t in t_list if t.check_time(t.end_time, settings.tt)]
         self.trains_list = sorted(t_list)
 
     def update(self):

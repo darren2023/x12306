@@ -75,8 +75,12 @@ class Settings(metaclass=Singleton):
     def __init__(self):
         # 从哪里出发 -f --from-station
         self.fs = ""
+        # 出发时间 -ft --from-time
+        self.ft = ""
         # 到哪里去 -t --to-station
         self.ts = ""
+        # 到达时间 -tt --to-time
+        self.tt = ""
         # 日期 -d --date （格式：2019-01-01）
         self.date = ""
         # 车次代码 -n --trains-no （格式：G1 G2 G3）
