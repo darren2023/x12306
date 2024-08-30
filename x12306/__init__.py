@@ -16,8 +16,10 @@ from .train import TrainTable, CModeTrainTable
 @click.version_option()
 @click.option("-f", "--from-station", prompt="请输入出发地", help="出发地")
 @click.option("-ft", "--from-time", help="出发时间范围，如：06:00-12:00")
+@click.option("-fs", "--from-slice", default="", help="出发站点切片")
 @click.option("-t", "--to-station", prompt="请输入目的地", help="目的地")
 @click.option("-tt", "--to-time", help="到达时间范围，如：18:00-24:00")
+@click.option("-ts", "--to-slice", default="", help="到达站点切片")
 @click.option("-c", "--change-station", help="中转站")
 @click.option("-ct", "--change-time", help="中转时间范围")
 @click.option("-ci", "--change-interval", help="中转时间间隔（h）")
@@ -37,8 +39,10 @@ from .train import TrainTable, CModeTrainTable
 def main(
     from_station,
     from_time,
+    from_slice,
     to_station,
     to_time,
+    to_slice,
     change_station,
     change_time,
     change_interval,
@@ -64,8 +68,10 @@ def main(
     settings.update(
         fs=from_station,
         ft=from_time,
+        from_slice=from_slice,
         ts=to_station,
         tt=to_time,
+        to_slice=to_slice,
         cs=change_station,
         ct=change_time,
         ci=change_interval,

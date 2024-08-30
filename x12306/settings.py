@@ -77,10 +77,14 @@ class Settings(metaclass=Singleton):
         self.fs = ""
         # 出发时间 -ft --from-time
         self.ft = ""
+        # 出发站点切片 -fs --from-slice
+        self.from_slice = ""
         # 到哪里去 -t --to-station
         self.ts = ""
         # 到达时间 -tt --to-time
         self.tt = ""
+        # 到达站点切片 -ts --to-slice
+        self.to_slice = ""
         # 中转站 -c --change-station
         self.cs = ""
         # 中转时间 -ct --change-time
@@ -174,6 +178,11 @@ class Settings(metaclass=Singleton):
     def station_list(self, name: str) -> list:
         # 车站列表
         return self.separate_stations(getattr(self, name))
+    
+    @property
+    def lmode(self):
+        # 买长乘短模式
+        return self.from_slice or self.to_slice
 
     @property
     def trains_no_list(self):
