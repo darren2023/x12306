@@ -145,6 +145,7 @@ class TrainTable:
 
     def __init__(self):
         self.trains_list = []
+        self._station_data = None
         self._session = requests.Session()
         self._session.headers.update(settings.headers)
 
@@ -192,6 +193,13 @@ class TrainTable:
         """
         if settings.zmode:
             self.trains_list = self._query_trains_multi_stations_zmode(
+                settings.station_code_list("fs"),
+                settings.station_code_list("ts"),
+                settings.date,
+                settings.trains_no_list,
+            )
+        elif settings.lmode:
+            self.trains_list = self._query_trains_longer_mode(
                 settings.station_code_list("fs"),
                 settings.station_code_list("ts"),
                 settings.date,
@@ -250,6 +258,7 @@ class TrainTable:
         }
         j = self._query(settings.trainno_url, params)
         if j and j.get("data") and j["data"].get("data"):
+            self._station_data = j["data"]["data"]
             for item in j["data"]["data"]:
                 if item["isEnabled"]:
                     stations_list.append(item["station_name"])
@@ -349,3 +358,68 @@ class TrainTable:
             for tc in ts_code:
                 trains_list += self._query_trains_zmode(fc, tc, date, trains_no_list)
         return trains_list
+
+    def _query_trains_longer_mode(self, fs_code, ts_code, date, trains_no_list) -> list:
+        """
+            高级查询模式，会查询从出发站(及之前)到出发站之后所有站的车次情况
+            仅被内部调用，调用前处理好参数
+        :param fs_code: 出发地编码列表
+        :param ts_code: 目的地编码列表
+        :param date: 日期
+        :param trains_no_list: 限制车次
+        :return: Train对象列表
+        """
+        def slice_converter(s: str) -> slice:
+            cols = [None if x == "" else int(x) for x in s.split(":")]
+            if len(cols) == 1:
+                if cols[0] is None:
+                    return slice(None, None)
+                else:
+                    return slice(cols[0], cols[0] + 1)
+            else:
+                return slice(*cols)
+        
+        def get_from_and_to_station_index_by_enable_state(data):
+            from_index = 0
+            to_index = 0
+            temp = True
+            for idx, item in enumerate(data):
+                if item["isEnabled"] == temp:
+                    if temp:
+                        from_index = idx
+                        temp = False
+                    else:
+                        to_index = idx -1 
+                        break
+            return from_index, to_index
+        
+        trains_no_list0 =  trains_no_list
+        trains_list = self._query_trains_multi_stations(fs_code, ts_code, date, trains_no_list)
+        print("Trains:", [train.no for train in trains_list])
+        trains_no_list = [train.no for train in trains_list]
+        from_stations_list = []
+        to_stations_list = []
+
+        for train in trains_list:
+            self._query_stations(train)
+            data = self._station_data
+            from_station_index, to_station_index = get_from_and_to_station_index_by_enable_state(data)
+            [from_stations_list.append(station["station_name"]) for station in data[:(from_station_index + 1)]]
+            [to_stations_list.append(station["station_name"]) for station in data[(to_station_index):]]
+        
+        query_from_stations = from_stations_list[slice_converter(settings.from_slice)]
+        query_to_stations = to_stations_list[slice_converter(settings.to_slice)]
+
+        print("From_stations:", query_from_stations)
+        print("To_stations:", query_to_stations)
+        for from_station in query_from_stations:
+            for to_station in query_to_stations:
+                fs_code = settings.stations_dict.get(from_station, "")
+                ts_code = settings.stations_dict.get(to_station, "")
+                print("Query", from_station, "->", to_station, "...")
+                if fs_code and ts_code:
+                    trains_list += self._query_trains(
+                        fs_code, ts_code, date, trains_no_list0
+                    )
+
+        return list(set(trains_list))
