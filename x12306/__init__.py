@@ -10,6 +10,7 @@ import click
 
 from .settings import settings
 from .train import TrainTable
+from .easy_typing import date_easy_typing, separator_unify
 
 
 @click.command()
@@ -55,6 +56,9 @@ def main(
 
     Example: python3 x12306.py -f 上海 -t 北京 -d "2024-05-01"
     """
+    date = date_easy_typing(date)
+    seats = separator_unify(seats)
+    trains_no = separator_unify(trains_no)
     settings.update(
         fs=from_station,
         ft=from_time,
